@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer'); // 處理檔案上傳
-const https = require('https');   // 用來呼叫 Imgur API
+const https = require('https');   // 用來呼叫 duk.tw API
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,45 +39,48 @@ const readCategories = () => {
 
 const writeCategories = (data) => fs.writeFileSync(CAT_PATH, JSON.stringify(data, null, 2));
 
-// --- 1. 免費上傳到 Imgur 圖床的後端邏輯 ---
+// --- 1. 改用 duk.tw (叮咚圖床) 免費上傳邏輯 ---
 app.post('/api/upload', upload.single('imageFile'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: '沒有上傳檔案' });
 
-    // 將圖片轉為 Imgur 接受的 Base64 格式
+    // 將圖片轉為 duk.tw 接收的 Base64 格式
     const base64Image = req.file.buffer.toString('base64');
-    const postData = JSON.stringify({ image: base64Image, type: 'base64' });
+    const postData = JSON.stringify({ 
+        image: base64Image,
+        type: 'base64'
+    });
 
     const options = {
-        hostname: 'api.imgur.com',
-        path: '/3/image',
+        hostname: 'duk.tw',
+        path: '/api/v1/upload',
         method: 'POST',
         headers: {
-            'Authorization': 'Client-ID 550a2699e1903ba', // 免費匿名 Client-ID
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(postData)
         }
     };
 
-    const imgurReq = https.request(options, (imgurRes) => {
+    const dukReq = https.request(options, (dukRes) => {
         let body = '';
-        imgurRes.on('data', (chunk) => body += chunk);
-        imgurRes.on('end', () => {
+        dukRes.on('data', (chunk) => body += chunk);
+        dukRes.on('end', () => {
             try {
                 const responseData = JSON.parse(body);
-                if (responseData.success) {
-                    res.json({ success: true, imgUrl: responseData.data.link });
+                // duk.tw 成功時會回傳 status: true，圖片網址在 data.url
+                if (responseData.status && responseData.data && responseData.data.url) {
+                    res.json({ success: true, imgUrl: responseData.data.url });
                 } else {
-                    res.status(500).json({ success: false, message: 'Imgur 上傳失敗' });
+                    res.status(500).json({ success: false, message: 'duk.tw 上傳失敗' });
                 }
             } catch (err) {
-                res.status(500).json({ success: false, message: '解析回傳失敗' });
+                res.status(500).json({ success: false, message: '解析 duk.tw 回傳失敗' });
             }
         });
     });
 
-    imgurReq.on('error', (e) => res.status(500).json({ success: false, message: e.message }));
-    imgurReq.write(postData);
-    imgurReq.end();
+    dukReq.on('error', (e) => res.status(500).json({ success: false, message: e.message }));
+    dukReq.write(postData);
+    dukReq.end();
 });
 
 // --- 2. 獲取所有分類 ---
