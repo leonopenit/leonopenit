@@ -2,7 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // 允許解析前端傳來的 JSON 與表單資料
 app.use(express.json());
@@ -50,7 +50,6 @@ app.post('/api/dishes', (req, res) => {
 
 // 啟動伺服器
 app.listen(PORT, () => {
-    console.log(`峇露露後端伺服器已成功啟動！`);
-    console.log(`>> 前端顧客網頁：http://localhost:${PORT}/index.html`);
-    console.log(`>> 後端管理網頁：http://localhost:${PORT}/admin.html`);
+    console.log(`伺服器成功啟動於 Port: ${PORT}`);
 });
+
