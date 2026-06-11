@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>⚙ 峇露露休閒農場 - 後端菜品管理系統</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f1eb; color: #333; padding: 40px 20px; }
+        .admin-box { max-width: 500px; margin: 0 auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h2 { color: #2C4A3E; margin-bottom: 20px; border-bottom: 2px solid #2C4A3E; padding-bottom: 10px; }
+        .form-group { margin-bottom: 18px; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; }
+        input[type="text"], input[type="number"], textarea, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
+        textarea { height: 80px; resize: none; }
+        .btn-add { width: 100%; background: #D97706; color: white; border: none; padding: 12px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-add:hover { background: #b45309; }
+        .back-link { display: block; text-align: center; margin-top: 15px; color: #2C4A3E; text-decoration: none; font-size: 0.9rem; }
+    </style>
+</head>
+<body>
+
+<div class="admin-box">
+    <h2>⚙ 峇露露菜品控制台</h2>
+    
+    <form action="/api/dishes" method="POST">
+        <div class="form-group">
+            <label>菜品分類 (品項)</label>
+            <select name="category" required>
+                <option value="主廚推薦主食">主食主打 (如：南洋風味飯/麵)</option>
+                <option value="人氣特調飲品">飲品主打 (如：水果茶/冰沙)</option>
+                <option value="歡聚分享點心">點心炸物 (如：沙嗲拼盤/點心)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>菜品名稱</label>
+            <input type="text" name="name" required placeholder="例如：印尼炒麵配沙嗲串">
+        </div>
+
+        <div class="form-group">
+            <label>餐點售價 (NT$)</label>
+            <input type="number" name="price" required placeholder="例如：250">
+        </div>
+
+        <div class="form-group">
+            <label>圖片網址 (可留空，或複製 FB/IG 的照片網址)</label>
+            <input type="text" name="img" placeholder="https://...">
+        </div>
+
+        <div class="form-group">
+            <label>菜品特色描述</label>
+            <textarea name="desc" required placeholder="簡短介紹這道菜的巴里島風味特色..."></textarea>
+        </div>
+
+        <button type="submit" class="btn-add">➕ 確認新增至前台菜單</button>
+    </form>
+    
+    <a href="/index.html" class="back-link">← 回到農場前台首頁</a>
+</div>
+
+</body>
+</html>
