@@ -14,6 +14,9 @@
         label { display: block; margin-bottom: 6px; font-weight: bold; font-size: 0.9rem; }
         input, textarea, select { width: 100%; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; }
         textarea { height: 70px; resize: none; }
+        .upload-row { display: flex; gap: 10px; margin-top: 5px; }
+        .upload-row input[type="file"] { padding: 5px; font-size: 0.85rem; }
+        #imgPreview { width: 100px; height: 100px; object-fit: cover; display: none; margin-top: 10px; border: 1px solid #ddd; border-radius: 6px; }
         .btn { width: 100%; border: none; padding: 12px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
         .btn-add { background: #D97706; }
         .btn-add:hover { background: #b45309; }
@@ -55,8 +58,7 @@
                 <input type="hidden" id="dishId">
                 <div class="form-group">
                     <label>菜品分類</label>
-                    <select name="category" id="category" required>
-                        </select>
+                    <select name="category" id="category" required></select>
                 </div>
                 <div class="form-group">
                     <label>菜品名稱</label>
@@ -66,10 +68,16 @@
                     <label>餐點售價 (NT$)</label>
                     <input type="number" name="price" id="price" required>
                 </div>
+                
                 <div class="form-group">
-                    <label>圖片網址</label>
-                    <input type="text" name="img" id="img">
+                    <label>菜品圖片 (可手動貼網址，或點下方上傳)</label>
+                    <input type="text" name="img" id="img" placeholder="https://..." oninput="updatePreview(this.value)">
+                    <div class="upload-row">
+                        <input type="file" id="localFile" accept="image/*" onchange="handleImageUpload(this)">
+                    </div>
+                    <img id="imgPreview" alt="圖片預覽">
                 </div>
+
                 <div class="form-group">
                     <label>菜品特色描述</label>
                     <textarea name="desc" id="desc" required></textarea>
@@ -92,22 +100,60 @@
 <script>
     let allDishes = [];
 
-    // 1. 載入並動態生成下拉選單分類
+    // 自動圖片預覽
+    function updatePreview(url) {
+        const imgEl = document.getElementById('imgPreview');
+        if (url) {
+            imgEl.src = url;
+            imgEl.style.display = 'block';
+        } else {
+            imgEl.style.display = 'none';
+        }
+    }
+
+    // 核心功能：處理照片選擇後，直接非同步外傳至免費圖床
+    async function handleImageUpload(input) {
+        if (!input.files || !input.files[0]) return;
+        
+        const file = input.files[0];
+        const formData = new FormData();
+        formData.append('imageFile', file);
+
+        const imgInput = document.getElementById('img');
+        imgInput.placeholder = "正在上傳照片至免費雲端圖床...";
+        imgInput.value = "";
+
+        try {
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                // 上傳成功，將永久網址填入欄位
+                imgInput.value = result.imgUrl;
+                updatePreview(result.imgUrl);
+                alert('圖片成功上傳至雲端圖床！');
+            } else {
+                alert('圖片上傳失敗：' + result.message);
+                imgInput.placeholder = "https://...";
+            }
+        } catch (err) {
+            alert('上傳發生錯誤，請重試！');
+            imgInput.placeholder = "https://...";
+        }
+    }
+
     async function loadCategories() {
         try {
             const response = await fetch('/api/categories');
             const categories = await response.json();
             const selectEl = document.getElementById('category');
-            
-            selectEl.innerHTML = categories.map(cat => `
-                <option value="${cat}">${cat}</option>
-            `).join('');
-        } catch (err) {
-            console.error('無法載入分類選項');
-        }
+            selectEl.innerHTML = categories.map(cat => `<option value="${cat}">${cat}</option>`).join('');
+        } catch (err) { console.error('無法載入分類選項'); }
     }
 
-    // 2. 載入目前所有菜色列表
     async function loadAdminMenu() {
         try {
             const response = await fetch('/api/dishes');
@@ -133,12 +179,9 @@
                     </div>
                 </div>
             `).join('');
-        } catch (err) {
-            document.getElementById('admin-list').innerHTML = '無法載入列表';
-        }
+        } catch (err) { document.getElementById('admin-list').innerHTML = '無法載入列表'; }
     }
 
-    // 點擊「修改」
     function startEdit(id) {
         const dish = allDishes.find(d => d.id === id);
         if (!dish) return;
@@ -149,6 +192,7 @@
         document.getElementById('name').value = dish.name;
         document.getElementById('price').value = dish.price;
         document.getElementById('img').value = dish.img;
+        updatePreview(dish.img);
         document.getElementById('desc').value = dish.desc;
 
         document.getElementById('submitBtn').style.display = 'none';
@@ -158,7 +202,6 @@
         document.getElementById('dishForm').onsubmit = (e) => e.preventDefault();
     }
 
-    // 送出修改 (PUT)
     async function submitUpdate() {
         const id = document.getElementById('dishId').value;
         const updatedData = {
@@ -182,10 +225,8 @@
         }
     }
 
-    // 刪除菜品 (DELETE)
     async function deleteDish(id, name) {
         if (!confirm(`確定要永久刪除「${name}」這道菜嗎？`)) return;
-
         const res = await fetch(`/api/dishes/${id}`, { method: 'DELETE' });
         const result = await res.json();
         if(result.success) {
@@ -197,16 +238,16 @@
     function resetForm() {
         document.getElementById('form-title').innerText = "⚙ 新增菜品";
         document.getElementById('dishForm').reset();
+        document.getElementById('imgPreview').style.display = 'none';
         document.getElementById('submitBtn').style.display = 'block';
         document.getElementById('updateBtn').style.display = 'none';
         document.getElementById('cancelBtn').style.display = 'none';
         document.getElementById('dishForm').onsubmit = null;
     }
 
-    // 初始化頁面
     window.onload = async function() {
-        await loadCategories(); // 先加載下拉選單分類
-        await loadAdminMenu();  // 再加載菜品列表
+        await loadCategories();
+        await loadAdminMenu();
     };
 </script>
 </body>
