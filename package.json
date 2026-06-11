@@ -1,0 +1,12 @@
+{
+  "name": "balulu-farm",
+  "version": "1.0.0",
+  "description": "峇露露休閒農場網頁後端",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
