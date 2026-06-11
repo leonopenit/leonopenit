@@ -6,7 +6,7 @@
     <style>
         body { font-family: sans-serif; background-color: #f4f1eb; color: #333; padding: 20px; margin: 0; }
         .container { display: flex; max-width: 1200px; margin: 0 auto; gap: 30px; }
-        .box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        .box { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); margin-bottom: 20px; }
         .form-area { flex: 1; min-width: 350px; height: fit-content; }
         .list-area { flex: 2; }
         h2 { color: #2C4A3E; margin-top: 0; border-bottom: 2px solid #2C4A3E; padding-bottom: 10px; }
@@ -17,10 +17,11 @@
         .btn { width: 100%; border: none; padding: 12px; border-radius: 6px; font-size: 1.1rem; cursor: pointer; font-weight: bold; transition: 0.2s; color: white; }
         .btn-add { background: #D97706; }
         .btn-add:hover { background: #b45309; }
+        .btn-cat { background: #4b5563; padding: 10px; font-size: 1rem; }
+        .btn-cat:hover { background: #374151; }
         .btn-update { background: #2C4A3E; display: none; }
         .btn-cancel { background: #888; display: none; margin-top: 8px; }
         
-        /* 列表樣式 */
         .dish-item { display: flex; align-items: center; justify-content: space-between; padding: 15px; border-bottom: 1px solid #eee; }
         .dish-item img { width: 60px; height: 60px; object-fit: cover; border-radius: 6px; margin-right: 15px; }
         .dish-info { flex: 1; }
@@ -36,40 +37,50 @@
 <body>
 
 <div class="container">
-    <div class="box form-area">
-        <h2 id="form-title">⚙ 新增菜品</h2>
-        <form id="dishForm" action="/api/dishes" method="POST">
-            <input type="hidden" id="dishId">
-            <div class="form-group">
-                <label>菜品分類</label>
-                <select name="category" id="category" required>
-                    <option value="主廚推薦主食">主食主打</option>
-                    <option value="人氣特調飲品">飲品主打</option>
-                    <option value="歡聚分享點心">點心炸物</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>菜品名稱</label>
-                <input type="text" name="name" id="name" required>
-            </div>
-            <div class="form-group">
-                <label>餐點售價 (NT$)</label>
-                <input type="number" name="price" id="price" required>
-            </div>
-            <div class="form-group">
-                <label>圖片網址</label>
-                <input type="text" name="img" id="img">
-            </div>
-            <div class="form-group">
-                <label>菜品特色描述</label>
-                <textarea name="desc" id="desc" required></textarea>
-            </div>
-            
-            <button type="submit" id="submitBtn" class="btn btn-add">➕ 確認新增至前台菜單</button>
-            <button type="button" id="updateBtn" class="btn btn-update" onclick="submitUpdate()">💾 儲存修改</button>
-            <button type="button" id="cancelBtn" class="btn btn-cancel" onclick="resetForm()">取消修改</button>
-        </form>
-        <a href="/index.html" class="back-link">← 回到農場前台首頁</a>
+    <div class="form-area">
+        <div class="box">
+            <h2>📁 新增菜品分類</h2>
+            <form action="/api/categories" method="POST">
+                <div class="form-group">
+                    <label>輸入新分類名稱</label>
+                    <input type="text" name="newCategory" placeholder="例如：主廚激推排餐" required>
+                </div>
+                <button type="submit" class="btn btn-cat">✨ 建立新分類</button>
+            </form>
+        </div>
+
+        <div class="box">
+            <h2 id="form-title">⚙ 新增菜品</h2>
+            <form id="dishForm" action="/api/dishes" method="POST">
+                <input type="hidden" id="dishId">
+                <div class="form-group">
+                    <label>菜品分類</label>
+                    <select name="category" id="category" required>
+                        </select>
+                </div>
+                <div class="form-group">
+                    <label>菜品名稱</label>
+                    <input type="text" name="name" id="name" required>
+                </div>
+                <div class="form-group">
+                    <label>餐點售價 (NT$)</label>
+                    <input type="number" name="price" id="price" required>
+                </div>
+                <div class="form-group">
+                    <label>圖片網址</label>
+                    <input type="text" name="img" id="img">
+                </div>
+                <div class="form-group">
+                    <label>菜品特色描述</label>
+                    <textarea name="desc" id="desc" required></textarea>
+                </div>
+                
+                <button type="submit" id="submitBtn" class="btn btn-add">➕ 確認新增至前台菜單</button>
+                <button type="button" id="updateBtn" class="btn btn-update" onclick="submitUpdate()">💾 儲存修改</button>
+                <button type="button" id="cancelBtn" class="btn btn-cancel" onclick="resetForm()">取消修改</button>
+            </form>
+            <a href="/index.html" class="back-link">← 回到農場前台首頁</a>
+        </div>
     </div>
 
     <div class="box list-area">
@@ -81,7 +92,22 @@
 <script>
     let allDishes = [];
 
-    // 載入目前所有菜色
+    // 1. 載入並動態生成下拉選單分類
+    async function loadCategories() {
+        try {
+            const response = await fetch('/api/categories');
+            const categories = await response.json();
+            const selectEl = document.getElementById('category');
+            
+            selectEl.innerHTML = categories.map(cat => `
+                <option value="${cat}">${cat}</option>
+            `).join('');
+        } catch (err) {
+            console.error('無法載入分類選項');
+        }
+    }
+
+    // 2. 載入目前所有菜色列表
     async function loadAdminMenu() {
         try {
             const response = await fetch('/api/dishes');
@@ -112,7 +138,7 @@
         }
     }
 
-    // 點擊「修改」：把資料填入左邊表單，切換成修改模式
+    // 點擊「修改」
     function startEdit(id) {
         const dish = allDishes.find(d => d.id === id);
         if (!dish) return;
@@ -125,16 +151,14 @@
         document.getElementById('img').value = dish.img;
         document.getElementById('desc').value = dish.desc;
 
-        // 切換顯示按鈕
         document.getElementById('submitBtn').style.display = 'none';
         document.getElementById('updateBtn').style.display = 'block';
         document.getElementById('cancelBtn').style.display = 'block';
         
-        // 讓傳統表單不自動送出
         document.getElementById('dishForm').onsubmit = (e) => e.preventDefault();
     }
 
-    // 送出修改資料 (PUT)
+    // 送出修改 (PUT)
     async function submitUpdate() {
         const id = document.getElementById('dishId').value;
         const updatedData = {
@@ -170,17 +194,20 @@
         }
     }
 
-    // 重設表單回到新增狀態
     function resetForm() {
         document.getElementById('form-title').innerText = "⚙ 新增菜品";
         document.getElementById('dishForm').reset();
         document.getElementById('submitBtn').style.display = 'block';
         document.getElementById('updateBtn').style.display = 'none';
         document.getElementById('cancelBtn').style.display = 'none';
-        document.getElementById('dishForm').onsubmit = null; // 恢復傳統 POST
+        document.getElementById('dishForm').onsubmit = null;
     }
 
-    window.onload = loadAdminMenu;
+    // 初始化頁面
+    window.onload = async function() {
+        await loadCategories(); // 先加載下拉選單分類
+        await loadAdminMenu();  // 再加載菜品列表
+    };
 </script>
 </body>
 </html>
