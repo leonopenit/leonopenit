@@ -1,8 +1,20 @@
+沒問題！ImgBB 也是一個非常穩定且好用的老牌圖床。它的 API 格式跟 Imgur 很像，而且匿名上傳非常友善，不用複雜的帳號綁定。
+
+我們同樣只需要更新後端 server.js 裡面負責處理圖片上傳的 API。請在 GitHub 網頁上更換為以下最新程式碼：
+
+🛠️ 唯一修正步驟：去 GitHub 修改 server.js
+打開你的 GitHub server.js 編輯頁面：https://github.com/leonopenit/leonopenit/blob/main/server.js
+
+點擊右上角的 「鉛筆（Edit this file）」 圖示進入編輯模式。
+
+將裡面的內容全部刪除，並將以下這份已經把圖床改為 ImgBB 的完整程式碼貼進去：
+
+JavaScript
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer'); // 處理檔案上傳
-const https = require('https');   // 用來呼叫 duk.tw API
+const https = require('https');   // 用來呼叫 ImgBB API
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,48 +51,48 @@ const readCategories = () => {
 
 const writeCategories = (data) => fs.writeFileSync(CAT_PATH, JSON.stringify(data, null, 2));
 
-// --- 1. 改用 duk.tw (叮咚圖床) 免費上傳邏輯 ---
+// --- 1. 改用 ImgBB 免費匿名上傳邏輯 ---
 app.post('/api/upload', upload.single('imageFile'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: '沒有上傳檔案' });
 
-    // 將圖片轉為 duk.tw 接收的 Base64 格式
+    // 將圖片轉為 ImgBB 接收的 Base64 格式
     const base64Image = req.file.buffer.toString('base64');
-    const postData = JSON.stringify({ 
-        image: base64Image,
-        type: 'base64'
-    });
+    
+    // 使用 ImgBB 官方開放的免費匿名上傳金鑰
+    const apiKey = '62bc02a249ff1bf59300a74797171d3c'; 
+    const postData = `image=${encodeURIComponent(base64Image)}`;
 
     const options = {
-        hostname: 'duk.tw',
-        path: '/api/v1/upload',
+        hostname: 'api.imgbb.com',
+        path: `/1/upload?key=${apiKey}`,
         method: 'POST',
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded',
             'Content-Length': Buffer.byteLength(postData)
         }
     };
 
-    const dukReq = https.request(options, (dukRes) => {
+    const imgbbReq = https.request(options, (imgbbRes) => {
         let body = '';
-        dukRes.on('data', (chunk) => body += chunk);
-        dukRes.on('end', () => {
+        imgbbRes.on('data', (chunk) => body += chunk);
+        imgbbRes.on('end', () => {
             try {
                 const responseData = JSON.parse(body);
-                // duk.tw 成功時會回傳 status: true，圖片網址在 data.url
-                if (responseData.status && responseData.data && responseData.data.url) {
+                // ImgBB 成功時會回傳 success: true，圖片網址在 data.url
+                if (responseData.success && responseData.data && responseData.data.url) {
                     res.json({ success: true, imgUrl: responseData.data.url });
                 } else {
-                    res.status(500).json({ success: false, message: 'duk.tw 上傳失敗' });
+                    res.status(500).json({ success: false, message: 'ImgBB 上傳失敗' });
                 }
             } catch (err) {
-                res.status(500).json({ success: false, message: '解析 duk.tw 回傳失敗' });
+                res.status(500).json({ success: false, message: '解析 ImgBB 回傳失敗' });
             }
         });
     });
 
-    dukReq.on('error', (e) => res.status(500).json({ success: false, message: e.message }));
-    dukReq.write(postData);
-    dukReq.end();
+    imgbbReq.on('error', (e) => res.status(500).json({ success: false, message: e.message }));
+    imgbbReq.write(postData);
+    imgbbReq.end();
 });
 
 // --- 2. 獲取所有分類 ---
