@@ -1,15 +1,3 @@
-沒問題！ImgBB 也是一個非常穩定且好用的老牌圖床。它的 API 格式跟 Imgur 很像，而且匿名上傳非常友善，不用複雜的帳號綁定。
-
-我們同樣只需要更新後端 server.js 裡面負責處理圖片上傳的 API。請在 GitHub 網頁上更換為以下最新程式碼：
-
-🛠️ 唯一修正步驟：去 GitHub 修改 server.js
-打開你的 GitHub server.js 編輯頁面：https://github.com/leonopenit/leonopenit/blob/main/server.js
-
-點擊右上角的 「鉛筆（Edit this file）」 圖示進入編輯模式。
-
-將裡面的內容全部刪除，並將以下這份已經把圖床改為 ImgBB 的完整程式碼貼進去：
-
-JavaScript
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
