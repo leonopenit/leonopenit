@@ -1,8 +1,8 @@
 const express = require('express');
 const fs = require('fs');
 const path = require('path');
-const multer = require('multer'); // 新增：處理檔案上傳
-const https = require('https');   // 新增：用來呼叫 Imgur API
+const multer = require('multer'); // 處理檔案上傳
+const https = require('https');   // 用來呼叫 Imgur API
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,13 +39,12 @@ const readCategories = () => {
 
 const writeCategories = (data) => fs.writeFileSync(CAT_PATH, JSON.stringify(data, null, 2));
 
-// --- 新增：免費上傳到 Imgur 圖床的後端邏輯 ---
+// --- 1. 免費上傳到 Imgur 圖床的後端邏輯 ---
 app.post('/api/upload', upload.single('imageFile'), (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, message: '沒有上傳檔案' });
 
     // 將圖片轉為 Imgur 接受的 Base64 格式
     const base64Image = req.file.buffer.toString('base64');
-    
     const postData = JSON.stringify({ image: base64Image, type: 'base64' });
 
     const options = {
@@ -66,7 +65,6 @@ app.post('/api/upload', upload.single('imageFile'), (req, res) => {
             try {
                 const responseData = JSON.parse(body);
                 if (responseData.success) {
-                    // 上傳成功，回傳 Imgur 的永久圖片網址
                     res.json({ success: true, imgUrl: responseData.data.link });
                 } else {
                     res.status(500).json({ success: false, message: 'Imgur 上傳失敗' });
@@ -82,8 +80,12 @@ app.post('/api/upload', upload.single('imageFile'), (req, res) => {
     imgurReq.end();
 });
 
-// --- 原有其他 API 保持不變 ---
-app.get('/api/categories', (req, res) => res.json(readCategories()));
+// --- 2. 獲取所有分類 ---
+app.get('/api/categories', (req, res) => {
+    res.json(readCategories());
+});
+
+// --- 3. 新增自訂分類 ---
 app.post('/api/categories', (req, res) => {
     const categories = readCategories();
     const newCat = req.body.newCategory ? req.body.newCategory.trim() : "";
@@ -96,8 +98,12 @@ app.post('/api/categories', (req, res) => {
     }
 });
 
-app.get('/api/dishes', (req, res) => res.json(readData()));
+// --- 4. 獲取所有菜品 ---
+app.get('/api/dishes', (req, res) => {
+    res.json(readData());
+});
 
+// --- 5. 新增菜品 ---
 app.post('/api/dishes', (req, res) => {
     const dishes = readData();
     const newDish = {
@@ -113,6 +119,7 @@ app.post('/api/dishes', (req, res) => {
     res.send('<script>alert("菜品新增成功！"); window.location.href="/admin.html";</script>');
 });
 
+// --- 6. 修改菜品 ---
 app.put('/api/dishes/:id', (req, res) => {
     const id = Number(req.params.id);
     let dishes = readData();
@@ -131,6 +138,7 @@ app.put('/api/dishes/:id', (req, res) => {
     } else { res.status(404).json({ success: false, message: '找不到該菜品' }); }
 });
 
+// --- 7. 刪除菜品 ---
 app.delete('/api/dishes/:id', (req, res) => {
     const id = Number(req.params.id);
     let dishes = readData();
