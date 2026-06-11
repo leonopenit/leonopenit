@@ -52,7 +52,7 @@ app.post('/api/upload', upload.single('imageFile'), (req, res) => {
         path: '/3/image',
         method: 'POST',
         headers: {
-            'Authorization': 'Client-ID 1c8db183f3dbcb5', // 免費匿名 Client-ID
+            'Authorization': 'Client-ID 550a2699e1903ba', // 免費匿名 Client-ID
             'Content-Type': 'application/json',
             'Content-Length': Buffer.byteLength(postData)
         }
