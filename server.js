@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 設定 public 資料夾為靜態網頁目錄
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(__dirname));
 
 // 讀取菜品的路徑
 const DATA_PATH = path.join(__dirname, 'dishes.json');
